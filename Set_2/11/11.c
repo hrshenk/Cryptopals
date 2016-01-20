@@ -1,3 +1,20 @@
+/*
+*Synopsis:  This code was written as a solution to challenge 11 of the Matasano Crypto Challenges.  See http://cryptopals.com
+*This program accepts user provided input, then appends random bytes to the beginning and end of the user 
+*input before encrypting under cbc or ecb.  The mode is chosen randomly.  Then the program attempts to determine
+*the block cipher mode used to encrypt.  A properly constructed input will result in properly detecting the encryption
+*mode being used.  Hence, this program illustrates that it is trivial, when a user controls a portion of the input, 
+*to distinguish between cipher modes.
+*
+*In this program, as opposed to in solutions to previous challenges, I chose to use the more abstracted EVP objects
+*and functions made available by the OpenSSL API to perform encryption and padding in order to illustrate the ability 
+*to work sensibly with APIs.
+*
+*As always...this is not production code and should not be used in a production environment.
+
+*/
+
+
 #include <openssl/conf.h>
 #include <openssl/evp.h>
 #include <openssl/err.h>
