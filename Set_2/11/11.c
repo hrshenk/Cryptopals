@@ -7,7 +7,8 @@
 
 #define Input_Size 500 //limits number of chars read by fgets, then buffers are defined via this value.
 
-unsigned int black_box(unsigned char *input_array);
+unsigned int black_box(unsigned char *input_array, unsigned char *output_array);
+int detect_block_cipher_mode(unsigned char *array, unsigned int length);
 int encrypt_cbc(unsigned char *plaintext, int plaintext_len, unsigned char *key, unsigned char *iv, unsigned char *ciphertext);
 int encrypt_ecb(unsigned char *plaintext, int plaintext_len, unsigned char *key, unsigned char *ciphertext);
 void handleErrors(void);
@@ -16,10 +17,56 @@ int main()
 {
     //input_array will accommodate user's input plus up to 20 random bytes added by blackbox.
 	unsigned char input_array[Input_Size] = {0};
+	unsigned char ciphertext_array[(Input_Size + 20 + 16)] = {0};
+	unsigned int length;
+	
+	
+	
 	printf("Enter string\n");
 	fgets(input_array, Input_Size, stdin);
-	black_box(input_array);
+	length = black_box(input_array, ciphertext_array);
+	detect_block_cipher_mode(ciphertext_array, length);
 	return 0;
+}
+
+//detect_block_cipher_mode, for appropriate inputs, distinguishes between ECB and CBC mode
+int detect_block_cipher_mode(unsigned char *array, unsigned int length)
+{
+    int i, j,k, block_count;
+    
+    //test our input has valid length
+    if(length % 16 != 0)
+    {
+        printf("invalid length");
+        return -1;
+    }
+    block_count = length/16;
+    if(block_count < 4)
+    {
+        printf("Insufficient number of blocks to accurately determing mode\n");
+        return -1;
+    }
+
+    for(i=0; i<block_count-1; i++)
+    {
+        for(j=i+1; j<block_count; j++)
+        {
+            k=0;
+            while(array[i*16+k] == array[j*16+k])
+            {
+                if(k==15)
+                {
+                    printf("ECB mode detected\n");
+                    return 0;
+                }
+                k++;
+            }
+
+        }
+    }
+    printf("CBC mode seems to have been used\n");
+    return 1;
+    
 }
 
 //black_box accepts as input an array of unsigned chars
@@ -27,13 +74,13 @@ int main()
 //array, then aes-128 encrypts using either cbc or ecb with a random key.
 //the block cipher mode used is chosen randomly, and if cbc is used
 //the initialization vector used is random.
-unsigned int black_box(unsigned char *input_array)
+unsigned int black_box(unsigned char *input_array, unsigned char *ciphertext_array)
 {
 	
 	FILE *fpin, *fpout;
 	unsigned int i=0, j, count = 0, cipher_len;
 	unsigned char num, temp, flag = 0;
-	unsigned char key[16], IV[16] = {0}, new_array[(Input_Size + 20)+16] = {0}, ciphertext_array[(Input_Size + 20 + 16)];
+	unsigned char key[16], IV[16] = {0}, new_array[(Input_Size + 20)] = {0};
 
 	// /dev/urandom gives uniformly distributed bytes
 	fpin = fopen("/dev/urandom", "r");	
@@ -95,13 +142,12 @@ unsigned int black_box(unsigned char *input_array)
 	if(flag ==1)
 	{
 	    cipher_len = encrypt_cbc(new_array, count, key, IV, ciphertext_array);
+	    printf("Actual CBC\n");
 	}
 	else 
 	{
-	    
-	    //encrypt_ecb(whatever arguments.)
 	    cipher_len = encrypt_ecb(new_array,count,key,ciphertext_array);
-	    printf("handle the ecb shtuff here\n");
+	    printf("Actual ECB:\n");
 	}
 	
 	//output the encrypted content to a file.  The contents of this file will be analyzed for ECB or CBC detetion.
@@ -113,7 +159,7 @@ unsigned int black_box(unsigned char *input_array)
 	
 	fclose(fpout);
 	fclose(fpin);
-	return flag;
+	return cipher_len;
 }
 
 
