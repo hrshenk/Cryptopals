@@ -7,8 +7,11 @@
  * See http://cryptopals.com
  * Encrypts or decrypts a file using AES-128 in CBC mode.  Encrypted files are 
  * hex encoded.  
- * Note this code should never be used in a production environment.  It is intended
- * to be used solely for educational purposes. 
+ * Note this code was written to learn and illustrate some knowledge of block cipher modes.  It is not
+ * production code and should never be used as such.  Note, the opensl crypto library provides better
+ * ways to perform this encryption, but which also abstract the operations involved.  In order to
+ * best illustrate an understanding of block cipher modes, padding etc, the encryption paradigm used
+ * here was built from more basic functions than would generally be used in production code.
  */
 
 void aes_encrypt_128(unsigned char *in_block, unsigned char *out_block, unsigned char *key_buf);
@@ -56,14 +59,14 @@ int decrypt_cbc()
 	//if fpin is 0 then opening the file failed.  Handle it.
 	if(fpin == 0)
 	{
-		perror("File open failed\n");
+		printf("file open failed\n");
 		return -10;
 	}
 	fpout = fopen("plaintext.txt", "w");
 	//if fpout is 0 the throw an error
 	if(fpout == 0)
 	{
-		perror("File open failed\n");
+		printf("File open failed\n");
 		return -10;
 	}
 	//read in until the end of the file. Each time 16 bytes are read
@@ -104,7 +107,7 @@ int decrypt_cbc()
 					//test to make sure the padding starts where expected.
 					else if(15-pad_count+1 != j)
 					{
-						perror("\ncipher decrypted to unprintable chars inconsistent with padding scheme\npadding scheme may be invalid, or plaintext message inconsistent with expected form\n");
+						printf("\ncipher decrypted to unprintable chars inconsistent with padding scheme\npadding scheme may be invalid, or plaintext message inconsistent with expected form\n");
 						fclose(fpin);
 						return -2;
 					}
@@ -121,7 +124,7 @@ int decrypt_cbc()
 						//if test fails print error
 						if(flag == 1)
 						{
-							perror("\npadding appears to be invalid\n");
+							printf("\npadding appears to be invalid\n");
 							fclose(fpin);
 							return -3;
 						}
@@ -145,7 +148,7 @@ int decrypt_cbc()
 		{
 			if(fscanf(fpin, "%2hhx", &ch) != EOF)
 			{
-				perror("End of file expected when correct padding scheme detected, but EOF not found");
+				printf("End of file expected when correct padding scheme detected, but EOF not found");
 				fclose(fpin);
 				return -4;
 			}
@@ -158,7 +161,7 @@ int decrypt_cbc()
 	
 	if(i%16 != 0)
 	{
-		perror("\n\nInput is not a multiple of the block size. Please verify input\n");
+		printf("\n\nInput is not a multiple of the block size. Please verify input\n");
 		fclose(fpin);
 		return -5;
 	}
@@ -167,7 +170,7 @@ int decrypt_cbc()
 	//if padding not detected then throw error
 	if(pad_test == 0)
 	{
-		perror("Padding not detected");
+		printf("Padding not detected");
 		fclose(fpin);
 		return -6;
 	}
@@ -187,13 +190,13 @@ int encrypt_cbc()
 	fpin = fopen("plaintext.txt", "r");
 	if(fpin == 0)
 	{
-		perror("failed to open input file");
+		printf("failed to open input file");
 		return -10;
 	}
 	fpout = fopen("hex_encoded.txt", "w");
 	if(fpout == 0)
 	{
-		perror("failed to open output file");
+		printf("failed to open output file");
 		return -10;
 	}
 	while(fscanf(fpin, "%c", &ch) != EOF)
@@ -205,7 +208,6 @@ int encrypt_cbc()
 			//in cbc mode we'll xor with last plaintext before encryption
 			for(j=0; j<16; j++)
 			{
-				printf("%c", plaintext[j]);
 				plaintext[j] = plaintext[j]^ciphertext[j];
 			}
 			//encrypt the block after xor
@@ -214,22 +216,20 @@ int encrypt_cbc()
 			for(j=0; j<16; j++)
 			{
 				fprintf(fpout, "%02x", ciphertext[j]);
+				printf("%02x", ciphertext[j]);
 			}
 		}
 		i++;
 	}
 	//pad the last block.
-	printf("pad count is %d\n", 16-(i%16));
 	if(pkcs_7_pad(plaintext, 16-(i%16), 16)!=0)
 	{
 		printf("Padding failed");
 		return -8;
 	}
 	//xor with last ciphertext
-	printf("last block:\n");
 	for(j=0; j<16; j++)
 	{
-		printf("%c", plaintext[j]);
 		plaintext[j] = plaintext[j]^ciphertext[j];
 	}
 	aes_encrypt_128(plaintext, ciphertext, key);
@@ -237,7 +237,9 @@ int encrypt_cbc()
 	for(j=0; j<16; j++)
 	{
 		fprintf(fpout, "%02x", ciphertext[j]);
+		printf("%02x",ciphertext[j]);
 	}
+	printf("\n");
 	fclose(fpin);
 	fclose(fpout);
 	return 0;
