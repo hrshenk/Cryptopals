@@ -6,20 +6,49 @@
 
 #define Input_Size 5000 //limits number of chars read by fgets, then buffers are defined via this value.
 
-
+unsigned int oracle(FILE *fpuser_input);
 int base64_decode(unsigned char *encoded, unsigned char *decoded);
 unsigned int compute_max_int(); //computes the maximum unsigned integer value.
 int encrypt_ecb(unsigned char *plaintext, int plaintext_len, unsigned char *key, unsigned char *ciphertext);
 void handleErrors(void);
-unsigned char key[16], key_set_flag =0;
+unsigned char key[16], key_set_flag = 0;
+unsigned char *ciphertext;
 
 
-int main()
+void main()
+{
+    unsigned int length,block_size, i, j;
+    FILE *fp_pt;
+    unsigned char array[Input_Size] = {0};
+    
+    fp_pt = fopen("oracle_input.txt", "w+");
+    if(fp_pt == NULL)
+    {
+        printf("File open failed\n");
+    }
+    
+    //next we'll determine the blocksize
+    length = oracle(fp_pt);
+    i = 0;
+    while(oracle(fp_pt) <= length) //once the ciphertext length returned by oracle increases we know we required another full block for encryption..
+    {
+        array[i] = 'a';
+        fprintf(fp_pt, "%s", array);
+        rewind(fp_pt);  //rewind after call to fprintf
+        i++;
+    }
+    rewind(fp_pt);
+    block_size = oracle(fp_pt)-length;
+    rewind(fp_pt);
+    printf("Block Size is: %u\n", block_size);
+    return;
+}
+
+unsigned int oracle(FILE *fpuser_input)
 {
     unsigned int i,file_size, array_size, user_input_size, plaintext_length, ciphertext_length; //array_size will be used to calculate how much memory must be allocated.
-    FILE *fpin, *fpurand, *fpuser_input;
-    unsigned char *buf, *base64, *ciphertext;
-    
+    FILE *fpin, *fpurand;
+    unsigned char *buf, *base64;
     
     fpin = fopen("12_test.txt", "r");
     if(fpin == NULL)
@@ -78,9 +107,10 @@ int main()
     }
     
     //read in the user input and put it in buf
-    printf("Enter string\n");
-    fgets(buf, Input_Size, stdin);
+    //printf("Enter string\n");
+    fgets(buf, Input_Size, fpuser_input);
     user_input_size = strlen(buf);
+    rewind(fpuser_input);
     
     //decode the contents of the file and append them to the user input.
     //base64_decode returns the length of the decoded content.  Should
@@ -103,9 +133,10 @@ int main()
             fscanf(fpurand, "%c", &key[i]);
             printf("%02x", key[i]);
         }
+        key_set_flag = 1;
         fclose(fpurand);
+        printf("\n");
     }
-    printf("\n");
     
     //prep for encryption and encrypt
     ciphertext_length = (plaintext_length + (16 - (plaintext_length % 16)));
@@ -129,15 +160,8 @@ int main()
         printf("cipher length differs from expected value\n");
         return -1;
     }
-    for(i=0; i<ciphertext_length; i++)
-    {
-        printf("%02x",ciphertext[i]);
-    }
-    printf("\n");
-    
-    
 
-    return 0;
+    return ciphertext_length;
 }
 
 /************************************************************************/
@@ -169,7 +193,6 @@ int base64_decode(unsigned char *input, unsigned char *output)
     if(input_length %4 != 0)
     {
         printf("invalid input.  Input length %u\n", input_length);
-        printf("%02x\t%02x\n", input[input_length -2], input[input_length-1]);
         return 0;
     }
     
