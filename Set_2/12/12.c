@@ -6,51 +6,177 @@
 
 #define Input_Size 5000 //limits number of chars read by fgets, then buffers are defined via this value.
 
-unsigned int oracle(FILE *fpuser_input);
+unsigned int oracle(unsigned char *user_input);
 int base64_decode(unsigned char *encoded, unsigned char *decoded);
 unsigned int compute_max_int(); //computes the maximum unsigned integer value.
 int encrypt_ecb(unsigned char *plaintext, int plaintext_len, unsigned char *key, unsigned char *ciphertext);
 void handleErrors(void);
+int detect_block_cipher_mode(unsigned char *array, unsigned int length);
 unsigned char key[16], key_set_flag = 0;
-unsigned char *ciphertext;
+unsigned char *ciphertext = NULL;
 
 
 void main()
 {
-    unsigned int length,block_size, i, j;
+    unsigned int length,block_size, i, j, k=0, block_fill, target_length, input_length, decrypt_success, target_flag =0;
     FILE *fp_pt;
-    unsigned char array[Input_Size] = {0};
+    unsigned char array[Input_Size] = {0}, user_input[Input_Size] = {0};
+    unsigned char *target_ciphertext;
+    int mode;
     
-    fp_pt = fopen("oracle_input.txt", "w+");
-    if(fp_pt == NULL)
-    {
-        printf("File open failed\n");
-    }
-    
+
     //next we'll determine the blocksize
-    length = oracle(fp_pt);
+    length = oracle(user_input);
+    target_length = length;
     i = 0;
-    while(oracle(fp_pt) <= length) //once the ciphertext length returned by oracle increases we know we required another full block for encryption..
+    while(oracle(user_input) <= length) //once the ciphertext length returned by oracle increases we know we required another full block for encryption..
     {
-        array[i] = 'a';
-        fprintf(fp_pt, "%s", array);
-        rewind(fp_pt);  //rewind after call to fprintf
+        user_input[i] = 'a';
         i++;
     }
-    rewind(fp_pt);
-    block_size = oracle(fp_pt)-length;
-    rewind(fp_pt);
-    printf("Block Size is: %u\n", block_size);
+    block_fill = i;  //block fill is the number of bytes required to align the plaintext encrypted 
+                    //by oracle with the block size.  So, if we submit i+1 bytes of text to oracle
+                    //we'll get back one more block of ciphertext than if we submit i bytes of pt.
+    
+    block_size = oracle(user_input)-length;
+    printf("block size is:  %u\n", block_size);
+    
+    for(i=0; i<2*block_size; i++)
+    {
+        user_input[i] = 'a';
+    }
+    length = oracle(user_input);
+    //here we'll detect ECB.  Note detect_block_cipher_mode was written
+    //with an assumed block size of 16.  To be more rigorous we should
+    //have the function accept the block size as an argument allowing us
+    //to detect ECB with any block size.
+    mode = detect_block_cipher_mode(ciphertext, length);
+    //if ECB isn't detected then quit
+    if(mode == 1)
+    {
+        printf("ECB not detected...attack not valid");
+        return;
+    }
+    
+    
+     //clear the input array
+    while(k<Input_Size)
+    {
+        //clear the user_input array
+        for(i=0; i < Input_Size; i++)
+        {
+            user_input[i] = 0;
+        }
+        //construct user_input so plaintext in oracle will hold the next unknown byte
+        for(i=0; i<(block_size-1)-(k%block_size); i++)
+        {
+             user_input[i] = 'a';
+        }
+
+        length = oracle(user_input);
+        //quick check to avoid integer wraps
+        if(length >= length + Input_Size + block_size)
+        {
+            return;
+        }
+        
+        if(target_flag ==0)
+        {
+            target_ciphertext = (unsigned char*)calloc((length + Input_Size + block_size), sizeof(char));
+            //puts("calloc ran");
+            if(target_ciphertext == NULL)
+            {
+                printf("calloc failed\n");
+                return;
+            }
+            target_flag = 0;
+        }
+        else
+        {
+            target_ciphertext = realloc(target_ciphertext, (length + Input_Size + block_size));
+            if(target_ciphertext == NULL)
+            {
+                printf("realloc failed \n");
+                return;
+            }
+        }
+        
+        
+        
+        for(i=0; i<length; i++)
+        {
+            target_ciphertext[i] = ciphertext[i];
+        }
+        
+        
+        for(i = ((block_size - 1) - (k % block_size)); i<Input_Size; i++ )
+        {
+            user_input[i] = array[i-((block_size - 1) - k%block_size)];
+
+        }
+
+        //make a dictionary and test against target ciphertext.
+        decrypt_success = 0;
+        for(i= 1 ; i< 255; i++) //we can skip non-printable chars since we're assuming printable chars. 
+        {
+            input_length = strlen(user_input);
+            //puts(user_input);
+            //printf("\ninput_len %d\n", input_length);
+            if(i==1)
+            {
+                input_length++;
+            }
+
+            user_input[input_length-1]=i;
+
+            length = oracle(user_input);
+            
+            for(j=0; j< input_length; j++)
+            {
+                if(ciphertext[j] != target_ciphertext[j])
+                {
+                    break;
+                }
+            }
+            if(j == input_length)
+            {
+                //printf("%c", user_input[input_length-1]);
+                array[k] = user_input[input_length-1];
+                k++;
+                decrypt_success = 1;
+                //printf("decrypt success %d\n", decrypt_success);
+                
+                break;
+            }
+            
+           
+
+            
+        }
+        
+        if(decrypt_success != 1)
+        {
+            printf("failed to decrypt byte %u\n", k);
+            break;
+        }
+
+
+    }
+    printf("\n");
+    puts(array);
+    free(ciphertext);
+    free(target_ciphertext);
     return;
 }
 
-unsigned int oracle(FILE *fpuser_input)
+unsigned int oracle(unsigned char *user_input)
 {
     unsigned int i,file_size, array_size, user_input_size, plaintext_length, ciphertext_length; //array_size will be used to calculate how much memory must be allocated.
     FILE *fpin, *fpurand;
     unsigned char *buf, *base64;
     
-    fpin = fopen("12_test.txt", "r");
+    //puts("oracle entered");
+    fpin = fopen("12.txt", "r");
     if(fpin == NULL)
     {
         printf("file open failed\n");
@@ -96,7 +222,6 @@ unsigned int oracle(FILE *fpuser_input)
     {
         i++;
     }
-    
     //array_size will not wrap an int due to above checks
     array_size = Input_Size + file_size;
     buf = (unsigned char*)malloc(array_size);
@@ -106,12 +231,18 @@ unsigned int oracle(FILE *fpuser_input)
         return -1;
     }
     
-    //read in the user input and put it in buf
-    //printf("Enter string\n");
-    fgets(buf, Input_Size, fpuser_input);
+    //transfer user_input to buf so we can append decoded file contents.
+    for(i=0; i<Input_Size - 1; i++)
+    {
+        buf[i] = user_input[i];
+        if(user_input[i]==0)
+        {
+            break;
+        }
+    }
+    buf[i] = 0;
     user_input_size = strlen(buf);
-    rewind(fpuser_input);
-    
+
     //decode the contents of the file and append them to the user input.
     //base64_decode returns the length of the decoded content.  Should
     //be roughly 3/4 of the input size (to within 2 bytes)
@@ -122,6 +253,7 @@ unsigned int oracle(FILE *fpuser_input)
         puts("base 64 conversion error");
         return 0;
     }
+    //puts("buf now holds userinput||decode");
     plaintext_length += user_input_size;  //determine length of userinput||decoded file input for encryption
     
     //check to see if a key has been generated.  If not, then generate one.
@@ -146,11 +278,23 @@ unsigned int oracle(FILE *fpuser_input)
         return -1;
     }
     
-    ciphertext = (unsigned char*)malloc(ciphertext_length);
     if(ciphertext == NULL)
     {
-        printf("malloc failed \n");
-        return -1;
+        ciphertext = (unsigned char*)malloc(ciphertext_length);
+        if(ciphertext == NULL)
+        {
+            printf("malloc failed \n");
+            return -1;
+        }
+    }
+    else
+    {
+        ciphertext = (unsigned char*)realloc(ciphertext, ciphertext_length);
+        if(ciphertext == NULL)
+        {
+            printf("realloc failed \n");
+            return -1;
+        }
     }
     
     encrypt_ecb(buf, plaintext_length, key, ciphertext);
@@ -160,6 +304,9 @@ unsigned int oracle(FILE *fpuser_input)
         printf("cipher length differs from expected value\n");
         return -1;
     }
+    free(base64);
+    free(buf);
+    fclose(fpin);
 
     return ciphertext_length;
 }
@@ -184,23 +331,28 @@ unsigned int compute_max_int()
 */
 int base64_decode(unsigned char *input, unsigned char *output)
 {
-    int i, j=0, input_length, flag = 0;
+    int i, j=0, input_length, flag = 0, invalid_flag = 0;
     unsigned int temp = 0;
-    
+
     
     input_length = strlen(input);
     //perform rudimentary input check.  
-    if(input_length %4 != 0)
+/*    if(input_length %4 != 0)
     {
         printf("invalid input.  Input length %u\n", input_length);
         return 0;
     }
+*/
     
     for(i=0; i<input_length; i++)
     {
-        if(temp != 0)
+        if((temp != 0) && (invalid_flag !=1))
         {
             temp = (temp << 6);
+        }
+        if(invalid_flag == 1)
+        {
+            invalid_flag =0;
         }
         switch(input[i])
         {
@@ -401,8 +553,8 @@ int base64_decode(unsigned char *input, unsigned char *output)
                 flag += 1;
                 break;
             default :
-                printf("invalid base64: %c\n%d\n", input[i], i);
-                return 0;
+                //printf("invalid base64: input %c\ncharacter num%d\n", input[i], i);
+                invalid_flag = 1;
         }
         //if 24 bits are added to tem, then convert to bytes
         if(i%4 == 3)
@@ -476,5 +628,44 @@ void handleErrors(void)
 {
   ERR_print_errors_fp(stderr);
   abort();
+}
+
+int detect_block_cipher_mode(unsigned char *array, unsigned int length)
+{
+    int i, j,k, block_count;
+    
+    //test our input has valid length
+    if(length % 16 != 0)
+    {
+        printf("invalid length");
+        return -1;
+    }
+    block_count = length/16;
+    if(block_count < 2)
+    {
+        printf("Insufficient number of blocks to accurately determing mode\n");
+        return -1;
+    }
+
+    for(i=0; i<block_count-1; i++)
+    {
+        for(j=i+1; j<block_count; j++)
+        {
+            k=0;
+            while(array[i*16+k] == array[j*16+k])
+            {
+                if(k==15)
+                {
+                    printf("ECB mode detected\n");
+                    return 0;
+                }
+                k++;
+            }
+
+        }
+    }
+    printf("CBC mode seems to have been used\n");
+    return 1;
+    
 }
 
