@@ -120,6 +120,7 @@ int profile_for(char *input, char *output)
     if(uid + 1 == 0) return 0;
     strcat(output, "email=");
     
+    //eats '=' and '&' chars in user input.
     for(i=0; i < strlen(input); i++)
     {
         if(input[i] != '=' && input[i] != '&')
@@ -129,7 +130,7 @@ int profile_for(char *input, char *output)
         
     }
 
-    strcat(output, "&uid=");
+    strcat(output, "&uid=");  //ignore use of strcat throughout, generally should use strncat as a best practice.
     sprintf(temp, "%u", uid);
     uid++;
     strcat(output, temp);
@@ -151,7 +152,6 @@ int accept_token(unsigned char *token)
         puts("invalid token");
         return 0;
     }
-    printf("token_len be: %d\n", token_len);
     profile_len = decrypt_ecb(hex_token, token_len, key, encoded_profile);
     encoded_profile[profile_len] = '\0';
     puts(encoded_profile);
@@ -240,29 +240,17 @@ int decrypt_ecb(unsigned char *ciphertext, int ciphertext_len, unsigned char *ke
      handleErrors();
   }
 
-  /* Initialise the decryption operation. IMPORTANT - ensure you use a key
-   * and IV size appropriate for your cipher
-   * In this example we are using 256 bit AES (i.e. a 256 bit key). The
-   * IV size for *most* modes is the same as the block size. For AES this
-   * is 128 bits */
   if(1 != EVP_DecryptInit_ex(ctx, EVP_aes_128_ecb(), NULL, key, NULL))
     {
         handleErrors();
     }
 
-
-  /* Provide the message to be decrypted, and obtain the plaintext output.
-   * EVP_DecryptUpdate can be called multiple times if necessary
-   */
   if(1 != EVP_DecryptUpdate(ctx, plaintext, &len, ciphertext, ciphertext_len))
     {
         handleErrors();
     }
   plaintext_len += len;
   
-  /* Finalise the decryption. Further plaintext bytes may be written at
-   * this stage.
-   */
   if(1 != EVP_DecryptFinal_ex(ctx, plaintext + len, &len)) 
   {
       handleErrors();
