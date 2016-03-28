@@ -17,15 +17,10 @@ It is possible to craft a token for an admin role simply from other tokens produ
 
 #define input_len 50
 
+char key[16] = {0};  //For this attack the key can be anything...so long as the same key is used to encrypt multiple profiles.
 int encrypt_ecb(unsigned char *plaintext, int plaintext_len, unsigned char *key, unsigned char *ciphertext);
+int decrypt_ecb(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,unsigned char *plaintext);
 void handleErrors(void);
-
-typedef struct profile{
-    unsigned char email[input_len];
-    unsigned int uid;
-    unsigned char role[6];
-    
-}profile;
 
 /*
 profile_for will encode and email address foo@bar.com and produce a profile 
@@ -33,18 +28,55 @@ in the format email=foo@bar.com&uid=10&role=user.
 The characters & and = are not permitted in the submitted email
 */
 int profile_for(char *input, char *output);
+/*
+the create token function accepts user input, and calls the profile for function
+to create a profile.  It then encrypts the profile and provides this token to the user
+*/
 int create_token();
+/*
+the accept token function accepts a string, converts it to a hex array, then decrypts the 'token'
+it then performs some format checks and parses the user's profile
+*/
+int accept_token();
+
+int ascii_to_hex(char *token_s, unsigned char *token_h);
 
 
 int main()
 {
-    create_token();
+    int ch, flag;
+    while(flag == 0)
+    {
+        puts("Press 1 to get a token for your profile, or 2 to submit a token for login:");
+        fscanf(stdin, "%d", &ch);
+        while(getchar() != '\n') /*this clears the input buffer for fgets used later*/;
+        
+        if(ch == 1)
+        {
+        create_token();
+        }
+        else
+        {
+            if(ch == 2)
+            {
+                accept_token();  
+            }
+            
+            else puts("Invalid choice.  Get your life together already!!!");
+            
+        }
+        
+        puts("press 1 to keep at it or 2 to quit");
+        fscanf(stdin, "%d", &flag);
+        flag = flag - 1;
+        while(getchar() != '\n') /*this clears the input buffer for fgets et al. used later*/;
+    }
     return 0;
 }
 
 int create_token()
 {
-   char user_input[input_len] = {0}, encoded_profile[200] = {0}, key[16] = {0};
+   char user_input[input_len] = {0}, encoded_profile[200] = {0};
    unsigned char token[200];
    int i, cipher_len, plaint_len;
    
@@ -63,25 +95,20 @@ int create_token()
         return 0;
     }
     
-    puts("input is:");
-    puts(user_input);
     if(!profile_for(user_input, encoded_profile))
     {
         puts("Fresh out of profiles...I guess I'm more popular than I thought.\n");
         return 0;
     }
-    puts("profile:");
-    printf("%s", encoded_profile);
-    //puts(encoded_profile);
+    
     plaint_len = strlen(encoded_profile);
-    printf("plaintext len is:  %d\n", plaint_len);
     cipher_len = encrypt_ecb(encoded_profile, plaint_len, key, token);
-    puts("Here is your profile token:");
+    puts("Here is your profile token:\n");
     for(i=0; i<cipher_len; i++)
     {
         printf("%02X", token[i]);
     }
-    puts("");
+    puts("\n");
     return 0;
 }
 
@@ -91,32 +118,68 @@ int profile_for(char *input, char *output)
     char temp[5];
     static unsigned char uid = 0;
     if(uid + 1 == 0) return 0;
-    
-    puts("input is:");
-    puts(input);
-    
     strcat(output, "email=");
-
-    puts(output);
     
     for(i=0; i < strlen(input); i++)
     {
         if(input[i] != '=' && input[i] != '&')
         {
             output[i+6] = input[i];
-            printf("%c\n", input[i]);
         }
         
     }
-    puts(output);
+
     strcat(output, "&uid=");
     sprintf(temp, "%u", uid);
     uid++;
     strcat(output, temp);
-    puts(output);
     strcat(output, "&role=user");
-    puts(output);
     return 1;
+}
+
+int accept_token(unsigned char *token)
+{
+    int in_len, token_len, i, profile_len;
+    char user_input[400];
+    unsigned char hex_token[200], encoded_profile[200];
+    puts("please submit your token");
+    fgets(user_input, 400, stdin);
+    in_len = strlen(user_input);
+    user_input[(in_len-1)] = '\0';
+    if((token_len = ascii_to_hex(user_input, hex_token)) == 1)
+    {
+        puts("invalid token");
+        return 0;
+    }
+    printf("token_len be: %d\n", token_len);
+    profile_len = decrypt_ecb(hex_token, token_len, key, encoded_profile);
+    encoded_profile[profile_len] = '\0';
+    puts(encoded_profile);
+}
+
+int ascii_to_hex(char *token_s, unsigned char *token_h)
+{
+    char *dummy, converter[2];
+    int i, j=0, len;
+    len = strlen(token_s);
+
+    if(len % 2 != 0)
+    {
+        return 1;
+    }
+    else
+    {
+        for(i=0; i<len; i++)
+        {
+            converter[0]= token_s[i];
+            i++;
+            converter[1]= token_s[i];
+            token_h[j] = strtoul(converter, &dummy, 16);
+            j++;
+            
+        }
+    }
+    return j;
 }
 
 /*******************************************************************************************************/
@@ -124,7 +187,7 @@ int profile_for(char *input, char *output)
 int encrypt_ecb(unsigned char *plaintext, int plaintext_len, unsigned char *key, unsigned char *ciphertext)
 {
   EVP_CIPHER_CTX *ctx;
-  int len, cipher_len = 0;
+  int len = 0, cipher_len = 0;
   
 
   /* Create and initialise the context */
@@ -140,18 +203,77 @@ int encrypt_ecb(unsigned char *plaintext, int plaintext_len, unsigned char *key,
   /* Provide the message to be encrypted, and obtain the encrypted output.
    */
   if(1 != EVP_EncryptUpdate(ctx, ciphertext, &len, plaintext, plaintext_len))
+  {
     handleErrors();
+  }
   
-  cipher_len = cipher_len + len;
+  cipher_len += len;
   /* Finalise the encryption.
    * EVP_EncryptFinal_ex will handle the padding, then encrypt the last block.
    */
-  if(1 != EVP_EncryptFinal_ex(ctx, ciphertext + cipher_len, &len)) handleErrors();
+  if(1 != EVP_EncryptFinal_ex(ctx, ciphertext + cipher_len, &len)) 
+  {
+      handleErrors();
+  }
+  
+  cipher_len += len;
 
   /* Clean up */
   EVP_CIPHER_CTX_free(ctx);
 
   return cipher_len;
+}
+
+/*************************************************************************************/
+int decrypt_ecb(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,unsigned char *plaintext)
+{
+  EVP_CIPHER_CTX *ctx;
+
+  int len = 0;
+
+  int plaintext_len = 0;
+
+
+  /* Create and initialise the context */
+  if(!(ctx = EVP_CIPHER_CTX_new())) 
+  {
+     handleErrors();
+  }
+
+  /* Initialise the decryption operation. IMPORTANT - ensure you use a key
+   * and IV size appropriate for your cipher
+   * In this example we are using 256 bit AES (i.e. a 256 bit key). The
+   * IV size for *most* modes is the same as the block size. For AES this
+   * is 128 bits */
+  if(1 != EVP_DecryptInit_ex(ctx, EVP_aes_128_ecb(), NULL, key, NULL))
+    {
+        handleErrors();
+    }
+
+
+  /* Provide the message to be decrypted, and obtain the plaintext output.
+   * EVP_DecryptUpdate can be called multiple times if necessary
+   */
+  if(1 != EVP_DecryptUpdate(ctx, plaintext, &len, ciphertext, ciphertext_len))
+    {
+        handleErrors();
+    }
+  plaintext_len += len;
+  
+  /* Finalise the decryption. Further plaintext bytes may be written at
+   * this stage.
+   */
+  if(1 != EVP_DecryptFinal_ex(ctx, plaintext + len, &len)) 
+  {
+      handleErrors();
+  }
+  
+  plaintext_len += len;
+
+  /* Clean up */
+  EVP_CIPHER_CTX_free(ctx);
+
+  return plaintext_len;
 }
 
 /*************************************************************************************/

@@ -1,0 +1,21 @@
+In order to craft a token that will provide the admin role submit a string such as:
+
+"aaaaaaaaaaadmin\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\n"
+
+The first 10 'a' chars in the above string force admin to be placed at the beginning of the second encrypted block.
+
+The \x0b characters will serve as padding in the 'attack' token (I used the Open3 Ruby library to launch
+
+the program and submit non-printable characters to its stdin pipe).
+
+Once the token for this input is received copy and save the second 16 byte block from the token for use later.
+
+Next create another profile for a token with a string such as:
+
+"12345678901234"
+
+Note the string above is 14 chars.  This aligns the token such that the last encrypted block starts with the string "user"
+
+Once the second token is received, simply replace the last block of it with the block saved earlier.
+
+The attack token will decrypt to: email=12345678901234&uid=0&role=admin.
