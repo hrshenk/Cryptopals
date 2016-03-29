@@ -19,12 +19,12 @@ Also, attempt to learn programming in C, and my first crack at GIT and GitHub.
 ##Set 2:  Block crypto
 | Challenge                                     | Progress |
 | :-------------------------------------------- | -------------: |
-| 9: Implement PKCS#7 padding                   |     |
-| 10:Implement CBC moode                        |    |
-| 11: An ECB/CBC detection oracle               |    |
-| 12: Byte-at-a-time ECB decryption (simple)    |    |
-| 13: ECB cut-and-paste                         |     |
-| 14: Byte-at-a-time ECB decryption             |    |
+| 9: Implement PKCS#7 padding                   | Complete    |
+| 10:Implement CBC moode                        | Complete   |
+| 11: An ECB/CBC detection oracle               | Complete   |
+| 12: Byte-at-a-time ECB decryption (simple)    | Complete   |
+| 13: ECB cut-and-paste                         | Complete    |
+| 14: Byte-at-a-time ECB decryption (Harder)    |    |
 | 15: PKCS#7 padding validation                 |    |
 | 16: CBC bitflipping attacks                   |     ||
 
