@@ -24,7 +24,7 @@ Also, attempt to learn programming in C, and my first crack at GIT and GitHub.
 | 11: An ECB/CBC detection oracle               | Complete   |
 | 12: Byte-at-a-time ECB decryption (simple)    | Complete   |
 | 13: ECB cut-and-paste                         | Complete    |
-| 14: Byte-at-a-time ECB decryption (Harder)    |    |
+| 14: Byte-at-a-time ECB decryption (Harder)    | Complete   |
 | 15: PKCS#7 padding validation                 |    |
 | 16: CBC bitflipping attacks                   |     ||
 
