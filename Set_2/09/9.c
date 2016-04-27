@@ -1,5 +1,5 @@
 /*Synopsis:  This program defines a function that accepts a "block" of size block_size,
- * and and pads it using pkcs7 padding.  You must pass the number of characters required for
+ * and pads it using pkcs7 padding.  You must pass the number of characters required for
  * padding to the pkcs_7_pad function defined below. 
  */
 

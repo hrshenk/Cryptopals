@@ -10,7 +10,7 @@
 *and functions made available by the OpenSSL API to perform encryption and padding in order to illustrate the ability 
 *to work sensibly with APIs.
 *
-*As always...this is not production code and should not be used in a production environment.
+*As always in this repo...not production code and should not be used in a production environment.
 
 */
 

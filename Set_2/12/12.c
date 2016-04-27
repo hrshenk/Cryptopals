@@ -169,13 +169,15 @@ void main()
     return;
 }
 
+//the oracle function appends the contents of a specified file to the end of user_input, then encrypts it
+//under an unknown but consistent key.  Repeated calls to this function can be used to decrypt the contents
+//of the file.
 unsigned int oracle(unsigned char *user_input)
 {
     unsigned int i,file_size, array_size, user_input_size, plaintext_length, ciphertext_length; //array_size will be used to calculate how much memory must be allocated.
     FILE *fpin, *fpurand;
     unsigned char *buf, *base64;
     
-    //puts("oracle entered");
     fpin = fopen("12.txt", "r");
     if(fpin == NULL)
     {
