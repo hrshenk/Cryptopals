@@ -21,8 +21,8 @@ int main()
 {
     unsigned char key[] = "YellowSubmarine", iv[] = "random_IV_so_fun";
     FILE *fp_in;
-    unsigned int ciphertext_len, i, plaintext_len;
-    unsigned char *ciphertext, *plaintext;
+    unsigned int ciphertext_len, i, plaintext_len, j=0;
+    unsigned char *ciphertext, *plaintext, admin[]="admin=true";
     if(!(fp_in = fopen("token.txt", "r")))
     {
         return 0;
@@ -41,7 +41,25 @@ int main()
     
     plaintext_len = decrypt_cbc(ciphertext, ciphertext_len, key, iv, plaintext);
     plaintext[plaintext_len] = '\0';
-    BIO_dump_fp (stdout, (const char *)plaintext, plaintext_len);
+    //BIO_dump_fp (stdout, (const char *)plaintext, plaintext_len);
+    //test for presence of string
+    for(i=0; i<plaintext_len; i++)
+    {
+        if(plaintext[i]=='a')
+        {
+            j=0;
+            while(plaintext[i]==admin[j])
+            {
+                i++;
+                j++;
+            }
+            
+        }
+        if(j>=10)
+        {
+            puts("Oh SNAP!  Now you've got the power too.");
+        }
+    }
     fclose(fp_in);
     return 0;
 }
