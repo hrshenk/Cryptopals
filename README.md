@@ -26,5 +26,5 @@ Also, attempt to learn programming in C, and my first crack at GIT and GitHub.
 | 13: ECB cut-and-paste                         | Complete    |
 | 14: Byte-at-a-time ECB decryption (Harder)    | Complete   |
 | 15: PKCS#7 padding validation                 | Complete   |
-| 16: CBC bitflipping attacks                   | Need to add a substring search.    ||
+| 16: CBC bitflipping attacks                   | Complete ||
 
