@@ -20,10 +20,7 @@ void generate_key(unsigned char* key)
 int decrypt_cbc(unsigned char *ciphertext, int ciphertext_len, unsigned char *key, unsigned char *iv, unsigned char *plaintext)
 {
   EVP_CIPHER_CTX *ctx;
-
-  int len;
-
-  int plaintext_len;
+  int len = 0, plaintext_len = 0;
 
   /* Create and initialise the context */
   if(!(ctx = EVP_CIPHER_CTX_new())) handleErrors();
@@ -36,10 +33,9 @@ int decrypt_cbc(unsigned char *ciphertext, int ciphertext_len, unsigned char *ke
    */
   if(1 != EVP_DecryptUpdate(ctx, plaintext, &len, ciphertext, ciphertext_len))
     handleErrors();
-  plaintext_len = len;
+  plaintext_len += len;
   
   EVP_CIPHER_CTX_set_padding(ctx, 0); //turn padding off for padding oracle attack demonstration.
-
   /* Finalise the decryption. Further plaintext bytes may be written at
    * this stage.
    */
