@@ -23,7 +23,7 @@ int create_token_server()
     const char *encoded_string = strings[(rand() % 10)]; //select one of the provided strings at random
     char *decoded_string = (char *)calloc(strlen(encoded_string), sizeof(char));
     int decoded_len = base64_decode(encoded_string, decoded_string);  //decode the selected string
-    
+    int temp;
     generate_key(key);//generate a 16 byte key to use for encryption and decryption.
     unsigned char iv[16];
     generate_key(iv);  //generate an initialization vector

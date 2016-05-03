@@ -31,7 +31,6 @@ int accept_token_server()
     }
     //decrypt the ciphertext
     int plaintext_len = decrypt_cbc(ciphertext+16, token_len-16, key, iv, plaintext);
-    int ret = pkcs7_check_strip(plaintext, token_len);
-    printf("%d\n", ret);
-    return ret;
+
+    return pkcs7_check_strip(plaintext, token_len-16);
 }
