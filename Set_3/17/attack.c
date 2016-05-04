@@ -66,11 +66,6 @@ int attack()
                 if(accept_token_server())
                 {
                     solution[15-j]=(j+1)^(k^iv[15-j]);
-                    if(solution[15-j]==1)
-                    {
-                        puts("check");
-                        printf("i: %d, j: %d\n", i, j);
-                    }
                     break;
                 }
             }
