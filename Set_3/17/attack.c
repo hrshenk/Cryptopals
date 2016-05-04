@@ -26,22 +26,16 @@ int attack()
     unsigned char iv[16], tamper_block[16], target_block[16], solution[16] = {0};
     FILE *fp_out;
     
-    for(i=0; i<block_count; i++)
+    for(i=0; i<block_count-1; i++)
     {
         for(j=0; j<16; j++)
         {
             iv[j] = token[(16*i)+j];
             tamper_block[j] = iv[j];
             target_block[j] = token[(16*(i+1))+j];
+            solution[j]=0;
         }
-        if(i)
-        {
-            for(j=0; j<16; j++)
-            {
-                decrypted_token[((16*(i-1))+j)] = solution[j];
-            }
-        }
-    
+
         for(j=0; j<16; j++)
         {
             for(k=0; k<j; k++)
@@ -51,6 +45,11 @@ int attack()
             
             for(k=0; k<255; k++)//k iterates over all possible bytes until we get the expected padding scheme.
             {
+                if((i==(block_count-2) && j==0) && iv[15] == k) 
+                {
+                    puts("skip");
+                    k++;
+                }
                 tamper_block[15-j]=k;
                 fp_out = fopen("token.txt", "w");
                 //write the tampered block to the file
@@ -67,11 +66,26 @@ int attack()
                 if(accept_token_server())
                 {
                     solution[15-j]=(j+1)^(k^iv[15-j]);
+                    if(solution[15-j]==1)
+                    {
+                        puts("check");
+                        printf("i: %d, j: %d\n", i, j);
+                    }
+                    break;
                 }
             }
         }
+        for(j=0; j<16; j++)
+        {
+            decrypted_token[((16*i)+j)] = solution[j];
+        }
     }
-    puts(decrypted_token);
+    for(i=0; i<token_len-16; i++)
+    {
+        if(decrypted_token[i]<=16) printf("%02x", decrypted_token[i]);
+        else printf("%c", decrypted_token[i]);
+    }
+    puts("");
     free(decrypted_token);
     free(token);
     return 0;
