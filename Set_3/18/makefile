@@ -1,4 +1,4 @@
 all:  18
 
 18:
-	gcc 18.c libnacl.a base64_decode.c -o 18 -lb64
+	gcc main.c funky_nonce_ctr.c base64_decode.c libnacl.a -o 18 -lb64

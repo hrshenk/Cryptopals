@@ -1,11 +1,11 @@
-#include "crypto_stream_aes128ctr.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
+int funky_nonce_ctr(unsigned char *message_out, unsigned char *message_in, unsigned int message_len, unsigned char *nonce, const unsigned char *key);
+
 int main()
 {
-
     const unsigned char key[] = "YELLOW SUBMARINE";
     //the field i'm calling nonce is actually the plaintext stream encrypted by aes.
     //so it is actually (8 byte nonce) || (8 byte counter) where both nonce and counter are little endian.
@@ -18,32 +18,7 @@ int main()
     message_len = base64_decode(encoded_message_in, decoded_message_in);
     //this will be the output of our cipher
     unsigned char* message_out = calloc(message_len+1, sizeof(char));
-    
-    int i;
-    int j;
-    
-    for(j=0; j < (message_len/16); ++j)
-    {
-        //build plaintext keystream according to challenge specifications
-        for(i=0; i<8; i++)
-        {
-            nonce[8+i] = (count << 8*i) & 0xff;
-        }
-
-        //generate next 16 bytes of keystream and xor with message_in
-        crypto_stream_aes128ctr_core2_xor(message_out + j*16, decoded_message_in+j*16, 16,nonce,key);
-        ++count;
-    }
-    
-    //build final block of plaintext for keystream
-    for(i=0; i<8; i++)
-    {
-        nonce[8+i] = (count << 8*i) & 0xff;
-    }
-    //generate last block of keystream and xor remaining unprocessed bytes
-    crypto_stream_aes128ctr_core2_xor(message_out + j*16, decoded_message_in+j*16, message_len %16 ,nonce,key);
-    
+    funky_nonce_ctr(message_out, decoded_message_in, message_len, nonce, key);
     puts(message_out);
-    
     return 0;
 }
