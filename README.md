@@ -32,7 +32,7 @@ Also, attempt to learn programming in C, and my first crack at GIT and GitHub.
 | Challenge                                     | Progress |
 | :-------------------------------------------- | -------------: |
 | 17: The CBC padding oracle                   | Complete    |
-| 18: Implement CTR, the stream cipher mode   | In progress  |
+| 18: Implement CTR, the stream cipher mode   | Complete  |
 | 19: Break fixed-nonce CTR mode using substitutions  |   |
 | 20: Break fixed-nonce CTR statistically |   |
 | 21: Implement the MT19937 Mersenne Twister RNG |    |
