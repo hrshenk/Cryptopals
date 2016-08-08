@@ -1,0 +1,1 @@
+int break_repeating_key_xor(FILE *fp_ciphertext, unsigned int key_len, unsigned char *key);
