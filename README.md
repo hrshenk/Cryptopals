@@ -7,14 +7,8 @@ Also, attempt to learn programming in C, and my first crack at GIT and GitHub.
 
 | Challenge                        | Progress |
 | :------------------------------- | -------------: |
-| 1: Convert hex to base64         |     |
-| 2: Fixed XOR                     |    |
-| 3: Single-byte XOR cipher        |    |
-| 4: Detect single-character XOR   |    |
-| 5: Implement repeating-key XOR   |     |
-| 6: Break repeating-key XOR       |    |
-| 7: AES in ECB mode               |    |
-| 8: Detect AES in ECB mode        |     ||
+| 1: Set 1 challenges are complete, but an incomplete solution set is included here.         |     |
+|
 
 ##Set 2:  Block crypto
 | Challenge                                     | Progress |
@@ -34,7 +28,7 @@ Also, attempt to learn programming in C, and my first crack at GIT and GitHub.
 | 17: The CBC padding oracle                   | Complete    |
 | 18: Implement CTR, the stream cipher mode   | Complete  |
 | 19: Break fixed-nonce CTR mode using substitutions  |   |
-| 20: Break fixed-nonce CTR statistically |   |
+| 20: Break fixed-nonce CTR statistically |Complete   |
 | 21: Implement the MT19937 Mersenne Twister RNG |    |
 | 22: Crack an MT19937 seed    |   |
 | 23: Clone an MT19937 RNG from its output |  |

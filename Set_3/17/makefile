@@ -9,5 +9,5 @@ libencrypt_util.a: encrypt_util.o
 encrypt_util.o: encrypt_util.c
 	gcc -c encrypt_util.c -lcrypto
 
-clear:
+clean:
 	rm *o 17 *a
