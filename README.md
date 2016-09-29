@@ -27,10 +27,10 @@ Also, attempt to learn programming in C, and my first crack at GIT and GitHub.
 | :-------------------------------------------- | -------------: |
 | 17: The CBC padding oracle                   | Complete    |
 | 18: Implement CTR, the stream cipher mode   | Complete  |
-| 19: Break fixed-nonce CTR mode using substitutions  |Skip (at least for now) due to lack of value |
+| 19: Break fixed-nonce CTR mode using substitutions  |Skipped.  Substitutions smubstitutions.  We have a more optimal way to win this. |
 | 20: Break fixed-nonce CTR statistically |Complete   |
 | 21: Implement the MT19937 Mersenne Twister RNG |Complete    |
 | 22: Crack an MT19937 seed    |Complete   |
 | 23: Clone an MT19937 RNG from its output |Complete  |
-| 24: Create the MT19937 stream cipher and break it|  ||
+| 24: Create the MT19937 stream cipher and break it|Complete  ||
 
