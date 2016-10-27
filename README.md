@@ -34,3 +34,16 @@ Also, attempt to learn programming in C, and my first crack at GIT and GitHub.
 | 23: Clone an MT19937 RNG from its output |Complete  |
 | 24: Create the MT19937 stream cipher and break it|Complete  ||
 
+##Set 4:  Block & stream crypto
+| Challenge                                     | Progress |
+| :-------------------------------------------- | -------------: |
+| 25: Break "random access read/write" AES CTR  | Solved.  Need makefile and code cleanup|
+| 26: CTR bitflipping |  |
+| 27: Recover the key from CBC with IV=Key|| 
+| 28: Implement a SHA-1 keyed MAC ||
+| 29: Break a SHA-1 keyed MAC using length extension||
+| 30: Break an MD4 keyed MAC using length extension| |
+| 32: Break HMAC-SHA1 with a slightly less artificial timing leak|   |
+| 23: Clone an MT19937 RNG from its output ||
+
+
