@@ -4,7 +4,8 @@
 #include <string.h>
 #include <stdlib.h>
 
-int main()
+//client will decrypt 1000 bytes of a disk encrypted with aes-ctr
+int client()
 {
     //open a socket using internet protocol, stream type for tcp.
     int s = socket(AF_INET, SOCK_STREAM, 0), i;
@@ -29,7 +30,7 @@ int main()
         printf("connection failed\n");
         return -1;
     }
-    puts("connected!");
+    puts("client connected!");
     //now we can read and write to our socket.
     write(s,"read:0,length:1000", 19);
     sleep(1);
@@ -38,14 +39,13 @@ int main()
     edit = (unsigned char *)calloc(sizeof(char), 2000);
     strncpy(edit, "edit:0,length:1000,new:",23);
     strncpy(edit+23, new_text, 1000);
-    puts(edit);
-    puts("hhhhhhhhhhhhhhh");
     write(s, edit, strlen(edit)+1);
     sleep(1);
     write(s,"read:0,length:1000", 19);
     sleep(2);
     read(s, updated, 1000);
     write(s, "fin", 4);
+    puts("Disk contents, first thousand bytes:");
     for(i=0; i<1000; ++i)
     {
         temp = (original[i]^updated[i]) ^ 'a';
