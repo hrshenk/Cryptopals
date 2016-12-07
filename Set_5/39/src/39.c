@@ -1,7 +1,7 @@
 #include <gmp.h>
 #include <stdio.h>
 #include <assert.h>
-#include "../headers/prime.h"
+#include "../headers/rsa.h"
 #define PUBLIC_EXPONENT 3
 
 int main(){
@@ -11,8 +11,8 @@ int main(){
      mpz_set_ui(q, 0);
      mpz_set_ui(e, PUBLIC_EXPONENT);
      do{
-          assert( prime_generate_prime(&p, 1024) );
-          assert( prime_generate_prime(&q, 1024) );
+          assert( rsa_generate_prime(&p, 1024) );
+          assert( rsa_generate_prime(&q, 1024) );
           mpz_mul(n, p, q);  //n is our modulus and is at most 2048 bits
           mpz_sub_ui (p_minus, p, 1UL);
           mpz_sub_ui (q_minus, q, 1UL);
