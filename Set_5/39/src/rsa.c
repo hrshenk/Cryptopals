@@ -8,7 +8,7 @@
 
 int rsa_extended_euclid(rsa_integer_t *gcd, rsa_integer_t *x, rsa_integer_t *y, rsa_integer_t a, rsa_integer_t b);
 
-int rsa_generate_private_key(rsa_integer_t *d, rsa_integer_t e, rsa_integer_t totient){
+int rsa_inverse_mod(rsa_integer_t *inverse, rsa_integer_t modulus, rsa_integer_t a){
     //we'll simply use the Extended euclidean algorithm
     //in a recursive manner to generate d.  This can be done
     //more efficiently via a loop, but for simplicity, we'll
@@ -16,12 +16,17 @@ int rsa_generate_private_key(rsa_integer_t *d, rsa_integer_t e, rsa_integer_t to
     //have very few levels in our recursion.
     mpz_t gcd, x, y;
     mpz_inits(gcd, x, y, NULL);
-    rsa_extended_euclid(&gcd, &x, &y, totient, e);
+    rsa_extended_euclid(&gcd, &x, &y, a, modulus);
     if( mpz_cmp_ui(gcd, 1UL) ){
+        rsa_clear_int(gcd);
+        rsa_clear_int(x);
+        rsa_clear_int(y);
         return 0;
     }
-    mpz_fdiv_r(*d, y, totient);
-    mpz_clears(gcd, x, y, NULL);
+    mpz_fdiv_r(*inverse, y, a);
+    rsa_clear_int(gcd);
+    rsa_clear_int(x);
+    rsa_clear_int(y);
     return 1;
 }
 
@@ -53,9 +58,45 @@ int rsa_encrypt(rsa_integer_t *output, const rsa_integer_t input, const rsa_key_
     return 0;
 }
 
-int rsa_init(rsa_key_t *key){
+int rsa_init_key(rsa_key_t *key){
     mpz_inits(key->modulus, key->exponent, NULL);
     key -> initialized = KEY_INITIALIZED;
+}
+
+rsa_key_pair_t *rsa_generate_key_pair(int width, int exponent){
+    rsa_key_pair_t *key_pair = (rsa_key_pair_t *) malloc( sizeof(rsa_key_pair_t) );
+    assert(key_pair != NULL);
+    rsa_init_key( &(key_pair -> private_key) );
+    rsa_init_key( &(key_pair -> public_key) );
+    
+    mpz_t p, q, p_minus, q_minus, totient, n, e, d;
+    mpz_inits(p, q, p_minus, q_minus, totient, n, e, d, NULL);
+    mpz_set_ui(e, exponent);
+    int i = 0;
+    do{
+          assert( rsa_generate_prime(&p, width/2) );
+          assert( rsa_generate_prime(&q, width/2) );
+          mpz_mul(n, p, q);  //n is our modulus and is at most 2048 bits
+          mpz_sub_ui (p_minus, p, 1UL);
+          mpz_sub_ui (q_minus, q, 1UL);
+          mpz_mul(totient, p_minus, q_minus);
+          ++i;
+    }
+    while( (!rsa_inverse_mod(&d, e, totient)) && (i < 1000) ); //if e is not relatively prime to totient then private key generation fails
+    assert(i<1000);
+    mpz_set( (key_pair -> private_key).modulus, n );
+    mpz_set( (key_pair -> public_key).modulus, n );
+    mpz_set( (key_pair -> private_key).exponent, d );
+    mpz_set( (key_pair -> public_key).exponent, e );
+    rsa_clear_int(p);
+    rsa_clear_int(p_minus);
+    rsa_clear_int(q_minus);
+    rsa_clear_int(totient);
+    rsa_clear_int(n);
+    rsa_clear_int(e);
+    rsa_clear_int(d);
+    return key_pair;
+    
 }
 
 int rsa_is_prime(const rsa_integer_t n, int trials){
@@ -130,8 +171,20 @@ int rsa_generate_prime(rsa_integer_t *prime_out, int width){
          mpz_urandomb (n, state, width);
          if( rsa_is_prime(n, 200) ){
              mpz_set(*prime_out, n);
+             rsa_clear_int(n);
              return 1;
          }  //provides at least 1-(1/4)**200 probability that n is prime if returns true...I think.
      }
+     rsa_clear_int(n);
      return 0;
+}
+
+int rsa_clear_int(rsa_integer_t integer){
+    mpz_set_ui(integer, 0);
+    mpz_clear(integer);
+}
+
+int rsa_clear_key(rsa_key_t *key){
+    rsa_clear_int( key->exponent);
+    rsa_clear_int( key->modulus);
 }

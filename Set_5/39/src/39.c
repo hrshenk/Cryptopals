@@ -1,27 +1,31 @@
 #include <gmp.h>
+#include <stdlib.h>
 #include <stdio.h>
-#include <assert.h>
 #include "../headers/rsa.h"
 #define PUBLIC_EXPONENT 3
 
 int main(){
-     mpz_t p, q, p_minus, q_minus, totient, n, e, d;
-     mpz_inits(p, q, p_minus, q_minus, totient, n, e, d, NULL);
-     mpz_set_ui(p, 0);
-     mpz_set_ui(q, 0);
-     mpz_set_ui(e, PUBLIC_EXPONENT);
-     do{
-          assert( rsa_generate_prime(&p, 1024) );
-          assert( rsa_generate_prime(&q, 1024) );
-          mpz_mul(n, p, q);  //n is our modulus and is at most 2048 bits
-          mpz_sub_ui (p_minus, p, 1UL);
-          mpz_sub_ui (q_minus, q, 1UL);
-          mpz_mul(totient, p_minus, q_minus);
+     rsa_key_pair_t *key_pair = rsa_generate_key_pair(2048, PUBLIC_EXPONENT);
+     gmp_printf("private key is %Zd\n\n%Zd\n\n\n", key_pair->private_key.exponent, key_pair->private_key.modulus);
+     gmp_printf("public key is %Zd\n\n%Zd\n\n\n", key_pair->public_key.exponent, key_pair->public_key.modulus);
+     puts("now lets see if encryption/decryption is functioning correctly");
+     rsa_integer_t pt, ct, pt_mebbe;
+     rsa_integer_inits(pt, ct, pt_mebbe, NULL);
+     FILE *fp;
+     fp = fopen("/dev/urandom", "r");
+     int seed;
+     fread(&seed,sizeof(int), 1, fp);
+     fclose(fp);
+     gmp_randstate_t state;
+     gmp_randinit_default(state);
+     gmp_randseed_ui (state, seed); //seeded with time for security reasons :)
+     mpz_urandomm(pt, state, (key_pair->private_key).modulus );
+     rsa_encrypt(&ct, pt, key_pair->public_key);
+     rsa_encrypt(&pt_mebbe, ct, key_pair->private_key);
+     if( !mpz_cmp(pt, pt_mebbe) ){
+          puts("Success!!!");
      }
-     while( !rsa_generate_private_key(&d, e, totient) ); //if e is not relatively prime to totient then private key generation fails
-     //d is now our private key
-     gmp_printf("private key is %Zd\n", d);
-     mpz_clears(p, q, p_minus, q_minus, totient, n, e, d, NULL);
+     else puts("another failure");
      return 0;
      
 }
