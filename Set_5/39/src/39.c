@@ -16,12 +16,16 @@ int main(){
      int seed;
      fread(&seed,sizeof(int), 1, fp);
      fclose(fp);
+     //we just use the gmp functions to generate a random plaintext
      gmp_randstate_t state;
      gmp_randinit_default(state);
-     gmp_randseed_ui (state, seed); //seeded with time for security reasons :)
+     gmp_randseed_ui (state, seed);
      mpz_urandomm(pt, state, (key_pair->private_key).modulus );
+     //encrypt with rsa public key
      rsa_encrypt(&ct, pt, key_pair->public_key);
+     //decrypt with rsa private key
      rsa_encrypt(&pt_mebbe, ct, key_pair->private_key);
+     //if the original plaintexts matches the result of our decryption we're golden
      if( !mpz_cmp(pt, pt_mebbe) ){
           puts("Success!!!");
      }
