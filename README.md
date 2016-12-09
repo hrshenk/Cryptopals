@@ -55,8 +55,8 @@ Also, attempt to learn programming in C, and my first crack at GIT and GitHub.
 | 36:  Implement Secure Remote Password (SRP)| |
 | 37:  Break SRP with a zero key| |
 | 38:  Offline dictionary attack on simplified SRP| |
-| 39:  Implement RSA||
-| 40:  Implement an E=3 RSA Broadcast attack|| |
+| 39:  Implement RSA|Completed|
+| 40:  Implement an E=3 RSA Broadcast attack|Completed| |
 
 
 
