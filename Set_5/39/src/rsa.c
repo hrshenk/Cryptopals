@@ -8,7 +8,7 @@
 
 int rsa_extended_euclid(rsa_integer_t *gcd, rsa_integer_t *x, rsa_integer_t *y, rsa_integer_t a, rsa_integer_t b);
 
-int rsa_inverse_mod(rsa_integer_t *inverse, rsa_integer_t modulus, rsa_integer_t a){
+int rsa_inverse_mod(rsa_integer_t *inverse, rsa_integer_t a, rsa_integer_t modulus){
     //we'll simply use the Extended euclidean algorithm
     //in a recursive manner to generate d.  This can be done
     //more efficiently via a loop, but for simplicity, we'll
@@ -17,13 +17,14 @@ int rsa_inverse_mod(rsa_integer_t *inverse, rsa_integer_t modulus, rsa_integer_t
     mpz_t gcd, x, y;
     mpz_inits(gcd, x, y, NULL);
     rsa_extended_euclid(&gcd, &x, &y, a, modulus);
+    //if a is not relatively prime to modulus, then no inverse exists...return false.
     if( mpz_cmp_ui(gcd, 1UL) ){
         rsa_clear_int(gcd);
         rsa_clear_int(x);
         rsa_clear_int(y);
         return 0;
     }
-    mpz_fdiv_r(*inverse, y, a);
+    mpz_fdiv_r(*inverse, x, modulus);
     rsa_clear_int(gcd);
     rsa_clear_int(x);
     rsa_clear_int(y);
@@ -76,6 +77,7 @@ rsa_key_pair_t *rsa_generate_key_pair(int width, int exponent){
     do{
           assert( rsa_generate_prime(&p, width/2) );
           assert( rsa_generate_prime(&q, width/2) );
+          assert( mpz_cmp(p, q) );  //abort if p == q
           mpz_mul(n, p, q);  //n is our modulus and is at most 2048 bits
           mpz_sub_ui (p_minus, p, 1UL);
           mpz_sub_ui (q_minus, q, 1UL);
@@ -88,6 +90,7 @@ rsa_key_pair_t *rsa_generate_key_pair(int width, int exponent){
     mpz_set( (key_pair -> public_key).modulus, n );
     mpz_set( (key_pair -> private_key).exponent, d );
     mpz_set( (key_pair -> public_key).exponent, e );
+    //rsa_clear_int sets nums to 0 before freeing.
     rsa_clear_int(p);
     rsa_clear_int(p_minus);
     rsa_clear_int(q_minus);
@@ -110,41 +113,50 @@ int rsa_is_prime(const rsa_integer_t n, int trials){
     fclose(fp);
     gmp_randstate_t state;
     gmp_randinit_default(state);
-    gmp_randseed_ui (state, seed); //seeded with time for security reasons :)
+    gmp_randseed_ui (state, seed);
     //generate random a and test a**n-1 per Fermat's little theorem
     mpz_t a, u, rop, n_minus_1;  //multi precision integers
     mpz_inits(a, u, rop, n_minus_1, NULL);
     mpz_sub_ui (n_minus_1, n, 1);
+    mp_bitcnt_t t = mpz_scan1(n_minus_1, 0), temp;  //mpbitcnt_t is an unsSigned long.
+    mpz_tdiv_q_2exp (u, n_minus_1, t);  //shift n-1 right by t and put result in u so n-1 = u*(2**t)
+    if(t==0){  //if t is zero then n is even and can only be prime in the case n=2
+        if(!mpz_cmp_ui(n, 2))
+            return 1;
+        return 0;
+        }
     while(trials--){
         //select a uniformly less than n
         mpz_urandomm(a, state, n);
-        //we wish to find u and t s.t. n-1 = u*(2**t)
-        //count the number of times 2 divides n-1
-        mp_bitcnt_t t = mpz_scan1(n_minus_1, 0);  //mpbitcnt_t is an unsSigned long.
-        if(t==0){  //if t is zero then n is even and can only be prime in the case n=2
-            if(!mpz_cmp_ui(rop, 2))
-                return 1;
-            return 0;
+        //we must ensure a is not 0
+        while( !mpz_cmp_ui(a, 0) ){
+            mpz_urandomm(a, state, n);
         }
-        mpz_tdiv_q_2exp (u, n_minus_1, t);  //shift n-1 right by t and put result in u so n-1 = u*(2**t)
+        //raise a**u mod n
         mpz_powm(rop, a, u, n);
         int prime_flag = 0;
-        while(t--){
+        temp = t;
+        //we'll square a**u t times
+        while(temp--){
             mpz_set (a, rop);
             mpz_powm_ui (rop, a, 2, n);
             //test if we have 1.  if so, then a is currently a square root of 1.
             if( !mpz_cmp_ui(rop, 1) ){
                  //the only square roots of 1 should be the trivial ones
                 if( mpz_cmp (a, n_minus_1) && mpz_cmp_ui (a, 1) ){
+                    mpz_clears(a, u, rop, n_minus_1, NULL);
                     return 0;
                 }
+                //if at any point we hit 1 we'll pass fermat's test
+                //so there is a good chance n is prime
                 prime_flag = 1;
                 break;
             }
             
         }
         //if prime_flag is not 1, then n isn't prime by fermat's little theorem.
-        if(!prime_flag){
+        if( !prime_flag ){
+            mpz_clears(a, u, rop, n_minus_1, NULL);
             return 0;
         }
     }
@@ -167,6 +179,7 @@ int rsa_generate_prime(rsa_integer_t *prime_out, int width){
      
      int i;
      //probability we find a prime is almost certain with 4*width samples.
+     //for sufficiently large width.  :)
      for(i=0; i < 4*width; ++i ){
          mpz_urandomb (n, state, width);
          if( rsa_is_prime(n, 200) ){

@@ -6,8 +6,6 @@
 
 int main(){
      rsa_key_pair_t *key_pair = rsa_generate_key_pair(2048, PUBLIC_EXPONENT);
-     gmp_printf("private key is %Zd\n\n%Zd\n\n\n", key_pair->private_key.exponent, key_pair->private_key.modulus);
-     gmp_printf("public key is %Zd\n\n%Zd\n\n\n", key_pair->public_key.exponent, key_pair->public_key.modulus);
      puts("now lets see if encryption/decryption is functioning correctly");
      rsa_integer_t pt, ct, pt_mebbe;
      rsa_integer_inits(pt, ct, pt_mebbe, NULL);

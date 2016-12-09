@@ -1,8 +1,10 @@
 #ifndef RSA_INCLUDED
 #define RSA_INCLUDED
 #include <gmp.h>
-#define rsa_integer_inits mpz_inits
-#define rsa_integer_init mpz_init
+#define rsa_integer_inits   mpz_inits   //just stealing some gmp functions for a cleaner interface
+#define rsa_integer_init    mpz_init
+#define rsa_integer_clears  mpz_clears
+#define rsa_integer_mul     mpz_mul
 //types
 typedef mpz_t rsa_integer_t;  //rsa_integers are simply multiprecision integers from libgmp.
 typedef struct rsa_key_t{
@@ -22,7 +24,7 @@ int rsa_inverse_mod(rsa_integer_t *inverse, rsa_integer_t modulus, rsa_integer_t
 int rsa_encrypt(rsa_integer_t *output, const rsa_integer_t input, const rsa_key_t key);
 int rsa_init_key(rsa_key_t *key);
 int rsa_clear_key(rsa_key_t *key);
-int rsa_clear_int(rsa_integer_t integer);
+int rsa_clear_int(rsa_integer_t integer);  //sets integer to 0 before freeing
 //prime functions
 int rsa_is_prime(const rsa_integer_t n, int trials);
 int rsa_generate_prime(rsa_integer_t *prime_out, int width);  //attempts to generate a width-bit prime
